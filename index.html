@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Steve's Health Plan</title>
+<meta name="description" content="Personal health dashboard — meals, workouts, supplements & daily tracker">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Health Plan">
+<meta name="theme-color" content="#1a2a1b">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK (compat mode for simplicity) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<style>
+  :root {
+    --bg: #f5f3ee;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --text-muted: #7a7a72;
+    --accent-green: #3d6b4f;
+    --accent-green-light: #e8f0eb;
+    --accent-orange: #c4793a;
+    --accent-orange-light: #fdf0e4;
+    --accent-blue: #3a5f8a;
+    --accent-blue-light: #e4edf5;
+    --accent-red: #a04040;
+    --accent-red-light: #f5e4e4;
+    --accent-purple: #6b4f8a;
+    --accent-purple-light: #f0e8f5;
+    --border: #e4e2db;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --radius: 16px;
+    --hit: #3d6b4f;
+    --miss: #c4564a;
+    --pending: #d4d0c8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* ===== PIN SCREEN ===== */
+  .pin-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #2c3e2d 0%, #1a2a1b 50%, #2d3a20 100%);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; padding: 24px;
+  }
+  .pin-screen.hidden { display: none; }
+  .pin-screen h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px;
+  }
+  .pin-screen p { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 32px; text-align: center; }
+  .pin-input {
+    width: 200px; padding: 14px 20px; border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1);
+    color: #fff; font-size: 24px; text-align: center; letter-spacing: 8px;
+    font-family: 'DM Sans', sans-serif; font-weight: 700;
+    outline: none; -webkit-text-security: disc;
+  }
+  .pin-input:focus { border-color: rgba(255,255,255,0.5); }
+  .pin-input::placeholder { letter-spacing: 2px; font-size: 14px; opacity: 0.4; }
+  .pin-btn {
+    margin-top: 20px; padding: 12px 40px; border-radius: 12px;
+    border: none; background: var(--accent-green); color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .pin-btn:hover { opacity: 0.9; }
+  .pin-note {
+    color: rgba(255,255,255,0.4); font-size: 12px; margin-top: 16px; text-align: center;
+  }
+
+  /* ===== SYNC INDICATOR ===== */
+  .sync-dot {
+    position: fixed; top: 12px; right: 12px; z-index: 200;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent-green); border: 2px solid var(--card);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    transition: background 0.3s;
+  }
+  .sync-dot.syncing { background: var(--accent-orange); }
+  .sync-dot.offline { background: var(--miss); }
+
+  /* ===== HERO ===== */
+  .hero {
+    background: linear-gradient(135deg, #2c3e2d 0%, #1a2a1b 50%, #2d3a20 100%);
+    padding: 40px 24px 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(61,107,79,0.3) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 30%, rgba(196,121,58,0.15) 0%, transparent 50%);
+    animation: shimmer 12s ease-in-out infinite alternate;
+  }
+  @keyframes shimmer { 0%{transform:rotate(0deg)} 100%{transform:rotate(3deg)} }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px; font-weight: 800; color: #fff;
+    position: relative; letter-spacing: -0.5px;
+  }
+  .hero p { color: rgba(255,255,255,0.6); font-size: 14px; position: relative; margin-top: 4px; }
+
+  /* ===== TABS ===== */
+  .tab-bar {
+    display: flex; gap: 0; background: var(--card);
+    border-bottom: 2px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .tab-btn {
+    flex: 1; min-width: 0; padding: 14px 8px 12px; border: none; background: none;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+    color: var(--text-muted); cursor: pointer; position: relative;
+    text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap;
+    transition: color 0.2s;
+  }
+  .tab-btn.active { color: var(--accent-green); }
+  .tab-btn.active::after {
+    content: ''; position: absolute; bottom: -2px; left: 20%; right: 20%;
+    height: 3px; background: var(--accent-green); border-radius: 3px 3px 0 0;
+  }
+  .tab-btn .tab-icon { display: block; font-size: 18px; margin-bottom: 2px; }
+
+  .tab-panel { display: none; padding: 20px 16px 100px; max-width: 600px; margin: 0 auto; }
+  .tab-panel.active { display: block; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .card-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 4px;
+  }
+  .card-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+
+  .section-head {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--accent-green); margin: 28px 0 12px;
+  }
+  .section-head:first-child { margin-top: 0; }
+
+  /* ===== MEALS ===== */
+  .meal-option {
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .meal-option:last-child { border-bottom: none; }
+  .meal-option .opt-title { font-weight: 600; font-size: 14px; }
+  .meal-option .opt-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ===== SUPPLEMENTS ===== */
+  .supp-block {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .supp-block:last-child { border-bottom: none; }
+  .supp-time {
+    min-width: 64px; font-size: 12px; font-weight: 700;
+    color: var(--accent-green); padding-top: 2px;
+  }
+  .supp-items { flex: 1; }
+  .supp-pill {
+    display: inline-block; background: var(--accent-green-light);
+    color: var(--accent-green); padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; margin: 2px 4px 2px 0;
+  }
+
+  /* ===== WORKOUTS ===== */
+  .day-row { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .day-cell {
+    flex: 1; min-width: 40px; text-align: center; padding: 10px 4px;
+    border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 600;
+    background: var(--card); border: 2px solid var(--border);
+    transition: all 0.2s;
+  }
+  .day-cell.selected { background: var(--accent-green); color: #fff; border-color: var(--accent-green); }
+  .day-cell .day-label { font-size: 10px; color: var(--text-muted); display: block; }
+  .day-cell.selected .day-label { color: rgba(255,255,255,0.7); }
+
+  .workout-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-strength { background: var(--accent-blue-light); color: var(--accent-blue); }
+  .badge-cardio { background: var(--accent-orange-light); color: var(--accent-orange); }
+  .badge-circuit { background: var(--accent-purple-light); color: var(--accent-purple); }
+  .badge-active { background: var(--accent-green-light); color: var(--accent-green); }
+  .badge-rest { background: #f0efeb; color: var(--text-muted); }
+
+  .exercise-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .exercise-row:last-child { border-bottom: none; }
+  .exercise-name { font-weight: 500; font-size: 14px; flex: 1; }
+  .exercise-detail { font-size: 13px; color: var(--text-muted); text-align: right; white-space: nowrap; margin-left: 12px; }
+
+  /* ===== PANTRY ===== */
+  .pantry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pantry-item {
+    background: var(--card); border-radius: 12px; padding: 12px 14px;
+    border: 1px solid var(--border); font-size: 13px;
+  }
+  .pantry-item .pi-name { font-weight: 600; }
+  .pantry-item .pi-note { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .pantry-cat { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .cat-free { background: var(--accent-green-light); color: var(--accent-green); }
+  .cat-mod { background: var(--accent-orange-light); color: var(--accent-orange); }
+  .cat-weekend { background: var(--accent-red-light); color: var(--accent-red); }
+
+  /* ===== TRACKER ===== */
+  .tracker-date-nav {
+    display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 20px;
+  }
+  .tracker-date-nav button {
+    background: var(--card); border: 2px solid var(--border); border-radius: 10px;
+    width: 40px; height: 40px; font-size: 18px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-weight: 700; color: var(--text);
+    transition: all 0.2s;
+  }
+  .tracker-date-nav button:hover { border-color: var(--accent-green); color: var(--accent-green); }
+  .tracker-date-label {
+    font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700;
+    min-width: 200px; text-align: center;
+  }
+  .tracker-date-sub { font-size: 12px; color: var(--text-muted); text-align: center; margin-top: -8px; margin-bottom: 16px; }
+
+  .check-card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 0; margin-bottom: 12px; overflow: hidden;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+    transition: border-color 0.3s;
+  }
+  .check-card.checked { border-color: var(--hit); }
+  .check-inner {
+    display: flex; align-items: center; gap: 14px; padding: 18px 20px; cursor: pointer;
+    user-select: none; -webkit-user-select: none;
+  }
+  .check-toggle {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 3px solid var(--border); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .check-card.checked .check-toggle {
+    background: var(--hit); border-color: var(--hit); color: #fff;
+    transform: scale(1.05);
+  }
+  .check-card:not(.checked) .check-toggle { color: transparent; }
+  .check-info { flex: 1; }
+  .check-cat { font-weight: 700; font-size: 15px; }
+  .check-plan { font-size: 13px; color: var(--text-muted); margin-top: 1px; }
+  .check-card.checked .check-cat { color: var(--hit); }
+
+  .streak-bar {
+    background: linear-gradient(135deg, #2c3e2d, #1a2a1b);
+    border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px;
+    color: #fff; display: flex; align-items: center; justify-content: space-between;
+  }
+  .streak-label { font-size: 13px; opacity: 0.7; }
+  .streak-num { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 800; }
+  .streak-unit { font-size: 14px; opacity: 0.7; margin-top: 2px; }
+  .streak-fire { font-size: 42px; }
+
+  .week-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--accent-green); margin: 28px 0 14px;
+  }
+  .heatmap-card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .heatmap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .heatmap-title { font-weight: 700; font-size: 14px; }
+  .heatmap-score { font-size: 13px; color: var(--text-muted); }
+  .heatmap-score strong { color: var(--hit); font-size: 16px; }
+
+  .heatmap-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .heatmap-day-label {
+    text-align: center; font-size: 10px; font-weight: 600;
+    color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase;
+  }
+  .heatmap-cell {
+    aspect-ratio: 1; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: all 0.2s;
+  }
+  .hm-hit { background: var(--accent-green-light); }
+  .hm-miss { background: var(--accent-red-light); }
+  .hm-pending { background: #f0efeb; }
+  .hm-future { background: #fafaf8; border: 1px dashed var(--border); }
+
+  .week-nav {
+    display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;
+  }
+  .week-nav button {
+    background: var(--card); border: 2px solid var(--border); border-radius: 10px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-weight: 600; color: var(--text);
+    transition: all 0.2s;
+  }
+  .week-nav button:hover { border-color: var(--accent-green); color: var(--accent-green); }
+  .week-nav span { font-size: 13px; font-weight: 600; min-width: 160px; text-align: center; }
+
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  .all-done { animation: pop 0.4s ease; }
+
+  .reset-btn {
+    display: block; margin: 20px auto 0; background: none; border: none;
+    color: var(--text-muted); font-size: 12px; cursor: pointer;
+    text-decoration: underline; font-family: 'DM Sans', sans-serif;
+  }
+  .reset-btn:hover { color: var(--accent-red); }
+
+  @media (max-width: 420px) {
+    .pantry-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 26px; }
+    .tab-btn { font-size: 10px; padding: 12px 4px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== PIN SCREEN ===== -->
+<div class="pin-screen" id="pin-screen">
+  <h1>🔒 Health Plan</h1>
+  <p>Enter your PIN to sync across devices.<br>First visit? Pick any 4-digit PIN and remember it.</p>
+  <input type="tel" class="pin-input" id="pin-input" maxlength="4" placeholder="PIN" autofocus>
+  <button class="pin-btn" onclick="submitPin()">Open Dashboard</button>
+  <div class="pin-note">Same PIN on every device = synced data</div>
+</div>
+
+<!-- ===== SYNC DOT ===== -->
+<div class="sync-dot" id="sync-dot" title="Sync status"></div>
+
+<!-- ===== APP ===== -->
+<div id="app" style="display:none;">
+
+<div class="hero">
+  <h1>Steve's Health Plan</h1>
+  <p>Meals & Supps · Workouts · Pantry · Tracker</p>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('meals')"><span class="tab-icon">🥗</span>Meals & Supps</button>
+  <button class="tab-btn" onclick="switchTab('workouts')"><span class="tab-icon">💪</span>Workouts</button>
+  <button class="tab-btn" onclick="switchTab('pantry')"><span class="tab-icon">🏪</span>Pantry</button>
+  <button class="tab-btn" onclick="switchTab('tracker')"><span class="tab-icon">📊</span>Tracker</button>
+</div>
+
+<!-- ==================== MEALS & SUPPS ==================== -->
+<div class="tab-panel active" id="panel-meals">
+  <div class="section-head">Weekday Framework</div>
+
+  <div class="card">
+    <div class="card-label">Morning</div>
+    <div class="card-title">Breakfast</div>
+    <div class="meal-option">
+      <div class="opt-title">Cottage Cheese Bowl</div>
+      <div class="opt-desc">Low-fat cottage cheese + Nutrail granola + cucumber slices</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">Protein Shake</div>
+      <div class="opt-desc">Whey protein + PBfit + Vita Coco coconut milk + banana</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">Greek Yogurt & Fruit</div>
+      <div class="opt-desc">Greek yogurt + berries + drizzle of honey + Aussie Bites on the side</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Midday</div>
+    <div class="card-title">Lunch</div>
+    <div class="meal-option">
+      <div class="opt-title">Salad Kit + Protein</div>
+      <div class="opt-desc">Taylor Farms kit + 2 hard-boiled eggs + guac cup on top</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">Hummus Plate</div>
+      <div class="opt-desc">Hummus + veggies + hard-boiled egg + whole grain crackers</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">Wrap</div>
+      <div class="opt-desc">Whole wheat tortilla + turkey or tuna + greens + hummus spread</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Afternoon</div>
+    <div class="card-title">Snack</div>
+    <div class="meal-option">
+      <div class="opt-title">Rise Bar</div>
+      <div class="opt-desc">Simple protein bar — great grab-and-go</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">Aussie Bites × 2</div>
+      <div class="opt-desc">Oat-based, decent fiber, satisfying</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">PBfit + Apple</div>
+      <div class="opt-desc">Sliced apple dipped in PBfit mixed with water</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Evening</div>
+    <div class="card-title">Dinner</div>
+    <div class="meal-option">
+      <div class="opt-title">Salmon + Roasted Veggies</div>
+      <div class="opt-desc">Baked salmon fillet + broccoli, sweet potato, olive oil</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">Chicken Stir-Fry</div>
+      <div class="opt-desc">Chicken breast + mixed vegetables + brown rice + low-sodium soy sauce</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">Bean & Grain Bowl</div>
+      <div class="opt-desc">Black beans + quinoa + roasted peppers + avocado + salsa</div>
+    </div>
+  </div>
+
+  <div class="section-head">Sunday Prep (~45 min)</div>
+  <div class="card">
+    <div class="meal-option"><div class="opt-title">Hard-boil 8–10 eggs</div></div>
+    <div class="meal-option"><div class="opt-title">Portion out cottage cheese into containers</div></div>
+    <div class="meal-option"><div class="opt-title">Wash & chop veggies (cucumbers, bell peppers, broccoli)</div></div>
+    <div class="meal-option"><div class="opt-title">Pre-portion guac cups & hummus into grab bags</div></div>
+    <div class="meal-option"><div class="opt-title">Cook a batch of quinoa or brown rice</div></div>
+  </div>
+
+  <div class="section-head">Weekend Splurge Rules</div>
+  <div class="card">
+    <div class="meal-option"><div class="opt-desc">✅ Heavy cream in coffee, whole milk, richer meals — all fair game Sat & Sun</div></div>
+    <div class="meal-option"><div class="opt-desc">✅ Eat out, enjoy favorites — no guilt, no tracking</div></div>
+    <div class="meal-option"><div class="opt-desc">⚡ Keep supplements consistent even on weekends</div></div>
+  </div>
+
+  <div class="section-head">💊 Daily Supplement Protocol</div>
+
+  <div class="card">
+    <div class="supp-block">
+      <div class="supp-time">MORNING<br>w/ breakfast</div>
+      <div class="supp-items">
+        <span class="supp-pill">CholestOff Plus</span>
+        <span class="supp-pill">Citrus Bergamot</span>
+        <span class="supp-pill">Fish Oil</span>
+        <span class="supp-pill">Metamucil ×1</span>
+      </div>
+    </div>
+    <div class="supp-block">
+      <div class="supp-time">EVENING<br>w/ dinner</div>
+      <div class="supp-items">
+        <span class="supp-pill">Metamucil ×1</span>
+      </div>
+    </div>
+    <div class="supp-block">
+      <div class="supp-time">POST<br>WORKOUT</div>
+      <div class="supp-items">
+        <span class="supp-pill">Whey Protein</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="background:var(--accent-orange-light); border-color:#e4ccaa;">
+    <div style="font-size:13px; color:var(--accent-orange);">
+      <strong>📌 After a break:</strong> Ease Metamucil back in — one serving/day for a few days before going back to twice daily. Other supplements can resume at full dose immediately.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">What They Do</div>
+    <div class="meal-option">
+      <div class="opt-title">CholestOff Plus</div>
+      <div class="opt-desc">Plant sterols — blocks cholesterol absorption in the gut</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">NAOMI Citrus Bergamot</div>
+      <div class="opt-desc">Bergamonte extract — supports healthy LDL & triglycerides</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">Fish Oil</div>
+      <div class="opt-desc">Omega-3s — triglyceride support, anti-inflammatory</div>
+    </div>
+    <div class="meal-option">
+      <div class="opt-title">Metamucil Sugar Free</div>
+      <div class="opt-desc">Psyllium husk fiber — binds bile acids, lowers LDL</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== WORKOUTS ==================== -->
+<div class="tab-panel" id="panel-workouts">
+  <div class="card" style="padding:12px 8px;">
+    <div class="day-row" id="day-row"></div>
+  </div>
+  <div id="workout-detail"></div>
+
+  <div class="card" style="margin-top:16px; background:var(--accent-green-light); border-color:#c2d8c9;">
+    <div style="font-size:13px; color:var(--accent-green);">
+      <strong>🫀 Dr. Yazdanshenas's rule:</strong> Cardio must elevate your heart rate meaningfully — walking doesn't count. This PPL split hits weights 6×/week with a 12-min cardio finisher every session.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PANTRY ==================== -->
+<div class="tab-panel" id="panel-pantry">
+  <div class="section-head">Use Freely</div>
+  <div class="pantry-grid">
+    <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Low-fat Cottage Cheese</div><div class="pi-note">Breakfast bowls, snacks</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Hard-Boiled Eggs</div><div class="pi-note">Protein on salads & snacks</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Greek Yogurt</div><div class="pi-note">Breakfast, dips, smoothies</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Taylor Farms Salad Kits</div><div class="pi-note">Quick weekday lunches</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Hummus</div><div class="pi-note">Dip, wrap spread, snacks</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Cucumbers</div><div class="pi-note">Side dish, snack dipper</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">PBfit</div><div class="pi-note">Shakes, apple dip</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Vita Coco Coconut Milk</div><div class="pi-note">Shake base — LDL-friendly</div></div>
+  </div>
+
+  <div class="section-head">In Moderation</div>
+  <div class="pantry-grid">
+    <div class="pantry-item"><span class="pantry-cat cat-mod">Moderate</span><div class="pi-name">Guacamole Cups</div><div class="pi-note">1/day — good fats but calorie-dense</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-mod">Moderate</span><div class="pi-name">Rise Bars</div><div class="pi-note">1/day max as a snack</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-mod">Moderate</span><div class="pi-name">Aussie Bites</div><div class="pi-note">2/day — oat-based but not low-cal</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-mod">Moderate</span><div class="pi-name">Nutrail Granola</div><div class="pi-note">Sprinkle — don't pour freely</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-mod">Moderate</span><div class="pi-name">Whey Protein</div><div class="pi-note">Post-workout or 1 shake/day</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-mod">Moderate</span><div class="pi-name">Probiotic Sodas</div><div class="pi-note">1/day — watch sugar content</div></div>
+  </div>
+
+  <div class="section-head">Weekends Only</div>
+  <div class="pantry-grid">
+    <div class="pantry-item"><span class="pantry-cat cat-weekend">Weekend</span><div class="pi-name">Heavy Whipping Cream</div><div class="pi-note">Biggest LDL offender for weekdays</div></div>
+    <div class="pantry-item"><span class="pantry-cat cat-weekend">Weekend</span><div class="pi-name">Whole Milk</div><div class="pi-note">Swap to coconut/oat/almond on weekdays</div></div>
+  </div>
+</div>
+
+<!-- ==================== TRACKER ==================== -->
+<div class="tab-panel" id="panel-tracker">
+  <div id="tracker-content">Loading tracker...</div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ==================== FIREBASE CONFIG ====================
+// 🔧 REPLACE THIS with your Firebase project config
+const firebaseConfig = {
+  apiKey: "AIzaSyC6yZhFjVVbyGBjyA85vx2wkpRRckCpR9U",
+  authDomain: "steves-health-plan.firebaseapp.com",
+  databaseURL: "https://steves-health-plan-default-rtdb.firebaseio.com",
+  projectId: "steves-health-plan",
+  storageBucket: "steves-health-plan.firebasestorage.app",
+  messagingSenderId: "806873445199",
+  appId: "1:806873445199:web:0611b0ed828fc466efcb3a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ==================== PIN & AUTH ====================
+let userPin = localStorage.getItem('health-plan-pin');
+let dbRef = null;
+let trackerData = {};
+let storageReady = false;
+
+function submitPin() {
+  const pin = document.getElementById('pin-input').value.trim();
+  if (pin.length < 4) { document.getElementById('pin-input').style.borderColor = '#c4564a'; return; }
+  localStorage.setItem('health-plan-pin', pin);
+  userPin = pin;
+  initApp();
+}
+
+document.getElementById('pin-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitPin();
+});
+
+function initApp() {
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('app').style.display = 'block';
+
+  // Hash the PIN to create a db path (simple hash, not security-critical)
+  const pinHash = 'user_' + simpleHash(userPin);
+  dbRef = db.ref('tracker/' + pinHash);
+
+  // Listen for real-time updates (syncs across devices)
+  dbRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    trackerData = data || {};
+    storageReady = true;
+    setSyncStatus('connected');
+
+    // Re-render tracker if it's currently visible
+    const trackerPanel = document.getElementById('panel-tracker');
+    if (trackerPanel.classList.contains('active')) {
+      renderTracker();
+    }
+  });
+
+  // Connection state
+  db.ref('.info/connected').on('value', (snap) => {
+    setSyncStatus(snap.val() ? 'connected' : 'offline');
+  });
+
+  // Init workout selector
+  initWorkouts();
+}
+
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot';
+  if (status === 'syncing') dot.classList.add('syncing');
+  else if (status === 'offline') dot.classList.add('offline');
+  dot.title = status === 'connected' ? 'Synced' : status === 'syncing' ? 'Syncing...' : 'Offline';
+}
+
+// Auto-open if PIN exists
+if (userPin) {
+  initApp();
+} else {
+  document.getElementById('app').style.display = 'none';
+}
+
+// ==================== TAB SWITCHING ====================
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  const tabs = ['meals','workouts','pantry','tracker'];
+  const idx = tabs.indexOf(id);
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  if (id === 'tracker') renderTracker();
+}
+
+// ==================== WORKOUTS ====================
+const workouts = [
+  {
+    title: "Monday — Push A",
+    badge: '<span class="workout-badge badge-strength">Push</span>',
+    duration: "55–65 min",
+    exercises: [
+      ["Barbell or Dumbbell Bench Press", "4 × 8–10 reps"],
+      ["Incline Dumbbell Press", "3 × 10–12 reps"],
+      ["Overhead Press (standing)", "3 × 8–10 reps"],
+      ["Cable Lateral Raises", "3 × 15 reps"],
+      ["Tricep Dips or Pushdowns", "3 × 12 reps"],
+      ["─── CARDIO FINISHER ───", ""],
+      ["Bike or Elliptical — intervals", "12 min (30s hard / 60s easy)"],
+    ]
+  },
+  {
+    title: "Tuesday — Pull A",
+    badge: '<span class="workout-badge badge-cardio">Pull</span>',
+    duration: "55–65 min",
+    exercises: [
+      ["Lat Pulldowns (wide grip)", "4 × 8–10 reps"],
+      ["Seated Cable Row", "3 × 10–12 reps"],
+      ["Dumbbell Shrugs", "3 × 12 reps"],
+      ["Face Pulls", "3 × 15 reps"],
+      ["Barbell or Dumbbell Curls", "3 × 10–12 reps"],
+      ["Hammer Curls", "2 × 12 reps"],
+      ["─── CARDIO FINISHER ───", ""],
+      ["Rowing machine — steady", "12 min at moderate pace"],
+    ]
+  },
+  {
+    title: "Wednesday — Legs A",
+    badge: '<span class="workout-badge badge-circuit">Legs</span>',
+    duration: "55–65 min",
+    exercises: [
+      ["Barbell Squat or Leg Press", "4 × 8–10 reps"],
+      ["Romanian Deadlifts", "3 × 10 reps"],
+      ["Walking Lunges", "3 × 12 each leg"],
+      ["Leg Curls", "3 × 12 reps"],
+      ["Calf Raises", "3 × 15 reps"],
+      ["─── CARDIO FINISHER ───", ""],
+      ["Incline treadmill walk (10%+)", "12 min at brisk pace"],
+    ]
+  },
+  {
+    title: "Thursday — Push B",
+    badge: '<span class="workout-badge badge-strength">Push</span>',
+    duration: "55–65 min",
+    exercises: [
+      ["Dumbbell Floor Press or Machine Chest", "4 × 10–12 reps"],
+      ["Cable Flyes (low to high)", "3 × 12–15 reps"],
+      ["Arnold Press (seated)", "3 × 10 reps"],
+      ["Lateral Raises (dumbbell)", "3 × 15 reps"],
+      ["Overhead Tricep Extension", "3 × 12 reps"],
+      ["─── CARDIO FINISHER ───", ""],
+      ["Bike — steady moderate", "12 min, HR 130–150"],
+    ]
+  },
+  {
+    title: "Friday — Pull B",
+    badge: '<span class="workout-badge badge-cardio">Pull</span>',
+    duration: "55–65 min",
+    exercises: [
+      ["Pull-ups or Assisted Pull-ups", "4 × 6–10 reps"],
+      ["Single-Arm Dumbbell Row", "3 × 10 each"],
+      ["Reverse Flyes", "3 × 15 reps"],
+      ["Cable Pullover", "3 × 12 reps"],
+      ["Incline Dumbbell Curls", "3 × 10–12 reps"],
+      ["─── CARDIO FINISHER ───", ""],
+      ["Elliptical — intervals", "12 min (30s hard / 60s easy)"],
+    ]
+  },
+  {
+    title: "Saturday — Legs B",
+    badge: '<span class="workout-badge badge-circuit">Legs</span>',
+    duration: "55–65 min",
+    exercises: [
+      ["Goblet Squats", "3 × 12 reps"],
+      ["Hip Thrusts or Glute Bridge", "3 × 12 reps"],
+      ["Bulgarian Split Squats", "3 × 10 each leg"],
+      ["Leg Extensions", "3 × 12 reps"],
+      ["Seated Calf Raises", "3 × 15 reps"],
+      ["Plank + Side Plank", "3 × 30–45 sec each"],
+      ["─── CARDIO FINISHER ───", ""],
+      ["Rowing machine — intervals", "12 min (30s hard / 60s easy)"],
+    ]
+  },
+  {
+    title: "Sunday — Rest & Prep",
+    badge: '<span class="workout-badge badge-rest">Rest</span>',
+    duration: "—",
+    exercises: [
+      ["Full rest day — recover and recharge", ""],
+      ["Meal prep for the week (~45 min)", ""],
+      ["Optional: foam rolling or light stretching", "10–15 min"],
+    ]
+  }
+];
+
+const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function initWorkouts() {
+  const dayRow = document.getElementById('day-row');
+  dayRow.innerHTML = '';
+  dayLabels.forEach((d, i) => {
+    const el = document.createElement('div');
+    el.className = 'day-cell' + (i === 0 ? ' selected' : '');
+    el.innerHTML = `<span class="day-label">${d}</span>`;
+    el.onclick = () => selectDay(i);
+    dayRow.appendChild(el);
+  });
+  selectDay(0);
+}
+
+function selectDay(index) {
+  document.querySelectorAll('.day-cell').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.day-cell')[index].classList.add('selected');
+  const w = workouts[index];
+  let html = `<div class="card">
+    <div class="card-label">${w.badge} &nbsp; ${w.duration}</div>
+    <div class="card-title">${w.title}</div>`;
+  w.exercises.forEach(e => {
+    html += `<div class="exercise-row">
+      <div class="exercise-name">${e[0]}</div>
+      <div class="exercise-detail">${e[1]}</div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('workout-detail').innerHTML = html;
+}
+
+// ==================== TRACKER ====================
+const CATEGORIES = [
+  { key: 'meals', label: 'Meals', icon: '🥗', plan: 'Follow weekday framework' },
+  { key: 'workout', label: 'Workout', icon: '💪', plan: 'PPL session + cardio finisher' },
+  { key: 'supplements', label: 'Supplements', icon: '💊', plan: 'Morning + evening protocol' },
+];
+
+function dateKey(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function formatDate(d) {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+}
+function getMonday(d) {
+  const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.getFullYear(), d.getMonth(), diff);
+}
+function sameDay(a, b) { return dateKey(a) === dateKey(b); }
+
+let trackerDate = new Date();
+let weekOffset = 0;
+
+async function saveTrackerData() {
+  setSyncStatus('syncing');
+  try {
+    await dbRef.set(trackerData);
+    setSyncStatus('connected');
+  } catch(e) {
+    console.error('Firebase save error:', e);
+    setSyncStatus('offline');
+  }
+}
+
+async function toggleCheck(catKey) {
+  const dk = dateKey(trackerDate);
+  if (!trackerData[dk]) trackerData[dk] = {};
+  trackerData[dk][catKey] = !trackerData[dk][catKey];
+  // Clean up false values (Firebase doesn't store false well)
+  if (!trackerData[dk][catKey]) delete trackerData[dk][catKey];
+  if (Object.keys(trackerData[dk]).length === 0) delete trackerData[dk];
+  await saveTrackerData();
+  renderTracker();
+}
+
+function getCheckState(dk, catKey) {
+  return trackerData[dk] && trackerData[dk][catKey] === true;
+}
+
+function getDayScore(dk) {
+  let hit = 0;
+  CATEGORIES.forEach(c => { if (getCheckState(dk, c.key)) hit++; });
+  return hit;
+}
+
+function getStreak() {
+  let streak = 0;
+  let d = new Date();
+  const todayKey = dateKey(d);
+  const todayScore = getDayScore(todayKey);
+  if (todayScore < CATEGORIES.length) {
+    d.setDate(d.getDate() - 1);
+  }
+  while (true) {
+    const dk = dateKey(d);
+    if (getDayScore(dk) === CATEGORIES.length) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function renderTracker() {
+  if (!storageReady) { document.getElementById('tracker-content').innerHTML = '<p style="text-align:center;color:var(--text-muted);">Connecting...</p>'; return; }
+
+  const dk = dateKey(trackerDate);
+  const today = new Date();
+  const isToday = sameDay(trackerDate, today);
+  const isFuture = trackerDate > today && !isToday;
+
+  const streak = getStreak();
+  const todayHits = getDayScore(dk);
+  const allDone = todayHits === CATEGORIES.length && isToday;
+
+  let html = '';
+
+  html += `<div class="streak-bar ${allDone ? 'all-done' : ''}">
+    <div>
+      <div class="streak-label">Current Streak</div>
+      <div class="streak-num">${streak}</div>
+      <div class="streak-unit">day${streak !== 1 ? 's' : ''} in a row</div>
+    </div>
+    <div class="streak-fire">${streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : '🎯'}</div>
+  </div>`;
+
+  html += `<div class="tracker-date-nav">
+    <button onclick="navDay(-1)">‹</button>
+    <div class="tracker-date-label">${formatDate(trackerDate)}</div>
+    <button onclick="navDay(1)" ${isFuture ? 'disabled style="opacity:0.3"' : ''}>›</button>
+  </div>`;
+  if (isToday) html += `<div class="tracker-date-sub">Today</div>`;
+
+  CATEGORIES.forEach(c => {
+    const checked = getCheckState(dk, c.key);
+    html += `<div class="check-card ${checked ? 'checked' : ''}" onclick="toggleCheck('${c.key}')">
+      <div class="check-inner">
+        <div class="check-toggle">${checked ? '✓' : ''}</div>
+        <div class="check-info">
+          <div class="check-cat">${c.icon} ${c.label}</div>
+          <div class="check-plan">${c.plan}</div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  if (allDone) {
+    html += `<div style="text-align:center;margin-top:16px;font-size:14px;color:var(--hit);font-weight:600;">
+      ✨ All goals hit today — nice work, Steve!
+    </div>`;
+  }
+
+  html += `<div class="week-section-title">Weekly Trends</div>`;
+
+  const monday = getMonday(new Date());
+  monday.setDate(monday.getDate() + (weekOffset * 7));
+  const sunday = new Date(monday);
+  sunday.setDate(sunday.getDate() + 6);
+  const weekLabel = `${monday.toLocaleDateString('en-US', {month:'short',day:'numeric'})} – ${sunday.toLocaleDateString('en-US', {month:'short',day:'numeric'})}`;
+
+  html += `<div class="week-nav">
+    <button onclick="navWeek(-1)">‹ Prev</button>
+    <span>${weekLabel}</span>
+    <button onclick="navWeek(1)" ${weekOffset >= 0 ? 'disabled style="opacity:0.3"' : ''}>Next ›</button>
+  </div>`;
+
+  CATEGORIES.forEach(c => {
+    let hits = 0; let possible = 0;
+    let cellsLabels = ''; let cellsData = '';
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(monday);
+      day.setDate(day.getDate() + i);
+      const ddk = dateKey(day);
+      const isFut = day > today && !sameDay(day, today);
+      const isChecked = getCheckState(ddk, c.key);
+
+      cellsLabels += `<div class="heatmap-day-label">${dayLabels[i]}</div>`;
+
+      if (isFut) {
+        cellsData += `<div class="heatmap-cell hm-future"></div>`;
+      } else {
+        possible++;
+        if (isChecked) {
+          hits++;
+          cellsData += `<div class="heatmap-cell hm-hit">✓</div>`;
+        } else {
+          cellsData += `<div class="heatmap-cell hm-miss">✗</div>`;
+        }
+      }
+    }
+
+    html += `<div class="heatmap-card">
+      <div class="heatmap-header">
+        <div class="heatmap-title">${c.icon} ${c.label}</div>
+        <div class="heatmap-score"><strong>${hits}</strong> / ${possible} days</div>
+      </div>
+      <div class="heatmap-row">${cellsLabels}</div>
+      <div class="heatmap-row">${cellsData}</div>
+    </div>`;
+  });
+
+  let totalHits = 0; let totalPossible = 0;
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(monday);
+    day.setDate(day.getDate() + i);
+    if (day <= today || sameDay(day, today)) {
+      CATEGORIES.forEach(c => {
+        totalPossible++;
+        if (getCheckState(dateKey(day), c.key)) totalHits++;
+      });
+    }
+  }
+  const pct = totalPossible > 0 ? Math.round((totalHits / totalPossible) * 100) : 0;
+  html += `<div class="card" style="text-align:center;">
+    <div style="font-size:36px;font-family:'Playfair Display',serif;font-weight:800;color:${pct >= 80 ? 'var(--hit)' : pct >= 50 ? 'var(--accent-orange)' : 'var(--miss)'};">${pct}%</div>
+    <div style="font-size:13px;color:var(--text-muted);">Overall adherence this week</div>
+  </div>`;
+
+  html += `<button class="reset-btn" onclick="resetData()">Reset all tracking data</button>`;
+  html += `<button class="reset-btn" onclick="logout()" style="margin-top:8px;">Change PIN / Log out</button>`;
+
+  document.getElementById('tracker-content').innerHTML = html;
+}
+
+function navDay(dir) {
+  trackerDate.setDate(trackerDate.getDate() + dir);
+  const today = new Date();
+  if (trackerDate > today) trackerDate = new Date(today);
+  renderTracker();
+}
+
+function navWeek(dir) {
+  if (dir > 0 && weekOffset >= 0) return;
+  weekOffset += dir;
+  renderTracker();
+}
+
+async function resetData() {
+  if (confirm('Clear all tracking history? This cannot be undone.')) {
+    trackerData = {};
+    await saveTrackerData();
+    renderTracker();
+  }
+}
+
+function logout() {
+  localStorage.removeItem('health-plan-pin');
+  if (dbRef) dbRef.off();
+  location.reload();
+}
+</script>
+</body>
+</html>

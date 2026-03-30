@@ -96,80 +96,272 @@
   .sync-dot.syncing { background: var(--accent-orange); }
   .sync-dot.offline { background: var(--miss); }
 
-  /* ===== HERO ===== */
-  .hero {
+  /* ===== TOP HEADER ===== */
+  .top-header {
     background: linear-gradient(135deg, #2c3e2d 0%, #1a2a1b 50%, #2d3a20 100%);
-    padding: 40px 24px 32px;
-    text-align: center;
+    padding: 32px 20px 20px;
     position: relative;
     overflow: hidden;
   }
-  .hero::before {
+  .top-header::before {
     content: '';
     position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
     background: radial-gradient(ellipse at 30% 50%, rgba(61,107,79,0.3) 0%, transparent 60%),
                 radial-gradient(ellipse at 70% 30%, rgba(196,121,58,0.15) 0%, transparent 50%);
-    animation: shimmer 12s ease-in-out infinite alternate;
   }
-  @keyframes shimmer { 0%{transform:rotate(0deg)} 100%{transform:rotate(3deg)} }
-  .hero h1 {
+  .header-content { position: relative; z-index: 1; }
+  .header-greeting {
+    font-size: 14px; color: rgba(255,255,255,0.5); font-weight: 500;
+  }
+  .header-date {
     font-family: 'Playfair Display', serif;
-    font-size: 32px; font-weight: 800; color: #fff;
-    position: relative; letter-spacing: -0.5px;
+    font-size: 24px; font-weight: 800; color: #fff; margin-top: 2px;
   }
-  .hero p { color: rgba(255,255,255,0.6); font-size: 14px; position: relative; margin-top: 4px; }
+  .header-streak {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.1); border-radius: 20px;
+    padding: 4px 12px 4px 8px; margin-top: 10px;
+    font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 600;
+  }
 
-  /* ===== TABS ===== */
-  .tab-bar {
-    display: flex; gap: 0; background: var(--card);
-    border-bottom: 2px solid var(--border);
-    position: sticky; top: 0; z-index: 100;
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  /* ===== PROGRESS DOTS ===== */
+  .progress-row {
+    display: flex; gap: 8px; margin-top: 14px;
   }
-  .tab-btn {
-    flex: 1; min-width: 0; padding: 14px 8px 12px; border: none; background: none;
-    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
-    color: var(--text-muted); cursor: pointer; position: relative;
-    text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap;
-    transition: color 0.2s;
+  .progress-chip {
+    flex: 1; display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.08); border-radius: 10px;
+    padding: 8px 10px; font-size: 12px; color: rgba(255,255,255,0.5);
+    font-weight: 600; transition: all 0.3s;
   }
-  .tab-btn.active { color: var(--accent-green); }
-  .tab-btn.active::after {
-    content: ''; position: absolute; bottom: -2px; left: 20%; right: 20%;
-    height: 3px; background: var(--accent-green); border-radius: 3px 3px 0 0;
+  .progress-chip.done {
+    background: rgba(61,107,79,0.4); color: rgba(255,255,255,0.9);
   }
-  .tab-btn .tab-icon { display: block; font-size: 18px; margin-bottom: 2px; }
+  .progress-chip .chip-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .progress-chip.done .chip-dot {
+    background: #6fce8a;
+    box-shadow: 0 0 6px rgba(111,206,138,0.5);
+  }
 
-  .tab-panel { display: none; padding: 20px 16px 100px; max-width: 600px; margin: 0 auto; }
-  .tab-panel.active { display: block; }
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 2px; padding: 10px 4px 8px; border: none; background: none;
+    font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600;
+    color: var(--text-muted); cursor: pointer; transition: color 0.2s;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .nav-btn.active { color: var(--accent-green); }
+  .nav-btn .nav-icon { font-size: 20px; }
 
-  /* ===== CARDS ===== */
+  /* ===== PANELS ===== */
+  .panel { display: none; padding: 16px 16px 100px; max-width: 600px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* ===== TODAY TIMELINE ===== */
+  .timeline-block {
+    position: relative;
+    margin-bottom: 6px;
+  }
+
+  .time-card {
+    background: var(--card); border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .time-card.now-active {
+    border-color: var(--accent-green);
+    box-shadow: 0 2px 16px rgba(61,107,79,0.12);
+  }
+
+  .time-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+    user-select: none; -webkit-user-select: none;
+  }
+  .time-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .time-icon.morning { background: var(--accent-orange-light); }
+  .time-icon.workout { background: var(--accent-blue-light); }
+  .time-icon.midday { background: var(--accent-green-light); }
+  .time-icon.afternoon { background: var(--accent-purple-light); }
+  .time-icon.evening { background: var(--accent-red-light); }
+  .time-icon.prep { background: #f0efeb; }
+
+  .time-meta { flex: 1; min-width: 0; }
+  .time-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--text-muted);
+  }
+  .time-title { font-weight: 700; font-size: 16px; margin-top: 1px; }
+  .time-now-badge {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; background: var(--accent-green);
+    color: #fff; padding: 2px 8px; border-radius: 6px;
+    margin-left: 6px;
+  }
+  .time-chevron {
+    font-size: 18px; color: var(--text-muted); transition: transform 0.3s;
+    flex-shrink: 0;
+  }
+  .time-card.expanded .time-chevron { transform: rotate(180deg); }
+
+  .time-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .time-card.expanded .time-body {
+    max-height: 800px;
+  }
+  .time-body-inner {
+    padding: 0 18px 18px;
+  }
+
+  /* ===== CHECK-IN STRIP (inside timeline) ===== */
+  .check-strip {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 12px;
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+  }
+  .check-strip.checked {
+    background: var(--accent-green-light);
+    border-color: var(--accent-green);
+  }
+  .check-strip .cs-toggle {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2.5px solid var(--border); background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: transparent;
+    flex-shrink: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .check-strip.checked .cs-toggle {
+    background: var(--hit); border-color: var(--hit); color: #fff;
+    transform: scale(1.05);
+  }
+  .check-strip .cs-label {
+    font-weight: 600; font-size: 14px; flex: 1;
+  }
+  .check-strip.checked .cs-label { color: var(--hit); }
+  .check-strip .cs-status {
+    font-size: 12px; color: var(--text-muted); font-weight: 500;
+  }
+  .check-strip.checked .cs-status { color: var(--hit); }
+
+  /* ===== MEAL OPTIONS ===== */
+  .meal-options {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .meal-opt {
+    background: var(--bg); border-radius: 10px; padding: 10px 14px;
+  }
+  .meal-opt .mo-title { font-weight: 600; font-size: 13px; }
+  .meal-opt .mo-desc { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+  /* ===== SUPPLEMENT PILLS ===== */
+  .supp-row {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+    padding-top: 10px; border-top: 1px solid var(--border);
+  }
+  .supp-row .sr-label {
+    width: 100%; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--accent-green); margin-bottom: 2px;
+  }
+  .supp-pill {
+    display: inline-block; background: var(--accent-green-light);
+    color: var(--accent-green); padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  /* ===== WORKOUT DETAIL (in timeline) ===== */
+  .exercise-list {
+    display: flex; flex-direction: column;
+  }
+  .exercise-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .exercise-row:last-child { border-bottom: none; }
+  .exercise-name { font-weight: 500; font-size: 13px; flex: 1; }
+  .exercise-detail { font-size: 12px; color: var(--text-muted); text-align: right; white-space: nowrap; margin-left: 12px; }
+  .exercise-row.cardio-divider {
+    border-bottom: none; padding: 6px 0 2px;
+  }
+  .exercise-row.cardio-divider .exercise-name {
+    font-size: 11px; font-weight: 700; color: var(--accent-orange);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  .workout-type-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-strength { background: var(--accent-blue-light); color: var(--accent-blue); }
+  .badge-cardio { background: var(--accent-orange-light); color: var(--accent-orange); }
+  .badge-circuit { background: var(--accent-purple-light); color: var(--accent-purple); }
+  .badge-rest { background: #f0efeb; color: var(--text-muted); }
+
+  /* ===== WEEKEND BANNER ===== */
+  .weekend-banner {
+    background: linear-gradient(135deg, var(--accent-orange-light), #fff5eb);
+    border: 1px solid #e8d5be;
+    border-radius: var(--radius); padding: 16px 18px;
+    margin-bottom: 6px;
+  }
+  .weekend-banner .wb-title {
+    font-weight: 700; font-size: 15px; color: var(--accent-orange);
+  }
+  .weekend-banner .wb-desc {
+    font-size: 13px; color: var(--text-muted); margin-top: 4px;
+  }
+
+  /* ===== FULL PLAN TAB ===== */
+  .plan-section-head {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--accent-green); margin: 24px 0 10px;
+  }
+  .plan-section-head:first-child { margin-top: 4px; }
+
   .card {
     background: var(--card); border-radius: var(--radius);
-    padding: 20px; margin-bottom: 16px;
+    padding: 20px; margin-bottom: 12px;
     box-shadow: var(--shadow); border: 1px solid var(--border);
   }
   .card-label {
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 4px;
   }
-  .card-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 12px; }
-
-  .section-head {
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 1px; color: var(--accent-green); margin: 28px 0 12px;
+  .card-title {
+    font-family: 'Playfair Display', serif; font-size: 20px;
+    font-weight: 700; margin-bottom: 12px;
   }
-  .section-head:first-child { margin-top: 0; }
-
-  /* ===== MEALS ===== */
   .meal-option {
-    padding: 12px 0; border-bottom: 1px solid var(--border);
+    padding: 10px 0; border-bottom: 1px solid var(--border);
   }
   .meal-option:last-child { border-bottom: none; }
   .meal-option .opt-title { font-weight: 600; font-size: 14px; }
   .meal-option .opt-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
 
-  /* ===== SUPPLEMENTS ===== */
   .supp-block {
     display: flex; align-items: flex-start; gap: 14px;
     padding: 14px 0; border-bottom: 1px solid var(--border);
@@ -180,44 +372,9 @@
     color: var(--accent-green); padding-top: 2px;
   }
   .supp-items { flex: 1; }
-  .supp-pill {
-    display: inline-block; background: var(--accent-green-light);
-    color: var(--accent-green); padding: 4px 12px; border-radius: 20px;
-    font-size: 12px; font-weight: 600; margin: 2px 4px 2px 0;
-  }
-
-  /* ===== WORKOUTS ===== */
-  .day-row { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-  .day-cell {
-    flex: 1; min-width: 40px; text-align: center; padding: 10px 4px;
-    border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 600;
-    background: var(--card); border: 2px solid var(--border);
-    transition: all 0.2s;
-  }
-  .day-cell.selected { background: var(--accent-green); color: #fff; border-color: var(--accent-green); }
-  .day-cell .day-label { font-size: 10px; color: var(--text-muted); display: block; }
-  .day-cell.selected .day-label { color: rgba(255,255,255,0.7); }
-
-  .workout-badge {
-    display: inline-block; padding: 3px 10px; border-radius: 20px;
-    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-  }
-  .badge-strength { background: var(--accent-blue-light); color: var(--accent-blue); }
-  .badge-cardio { background: var(--accent-orange-light); color: var(--accent-orange); }
-  .badge-circuit { background: var(--accent-purple-light); color: var(--accent-purple); }
-  .badge-active { background: var(--accent-green-light); color: var(--accent-green); }
-  .badge-rest { background: #f0efeb; color: var(--text-muted); }
-
-  .exercise-row {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 10px 0; border-bottom: 1px solid var(--border);
-  }
-  .exercise-row:last-child { border-bottom: none; }
-  .exercise-name { font-weight: 500; font-size: 14px; flex: 1; }
-  .exercise-detail { font-size: 13px; color: var(--text-muted); text-align: right; white-space: nowrap; margin-left: 12px; }
 
   /* ===== PANTRY ===== */
-  .pantry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pantry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .pantry-item {
     background: var(--card); border-radius: 12px; padding: 12px 14px;
     border: 1px solid var(--border); font-size: 13px;
@@ -229,7 +386,7 @@
   .cat-mod { background: var(--accent-orange-light); color: var(--accent-orange); }
   .cat-weekend { background: var(--accent-red-light); color: var(--accent-red); }
 
-  /* ===== TRACKER ===== */
+  /* ===== TRACKER / STATS ===== */
   .tracker-date-nav {
     display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 20px;
   }
@@ -297,7 +454,6 @@
   .heatmap-title { font-weight: 700; font-size: 14px; }
   .heatmap-score { font-size: 13px; color: var(--text-muted); }
   .heatmap-score strong { color: var(--hit); font-size: 16px; }
-
   .heatmap-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
   .heatmap-day-label {
     text-align: center; font-size: 10px; font-weight: 600;
@@ -335,10 +491,39 @@
   }
   .reset-btn:hover { color: var(--accent-red); }
 
+  /* ===== DAY SELECTOR (workouts in full plan) ===== */
+  .day-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .day-cell {
+    flex: 1; min-width: 40px; text-align: center; padding: 10px 4px;
+    border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 600;
+    background: var(--card); border: 2px solid var(--border);
+    transition: all 0.2s;
+  }
+  .day-cell.selected { background: var(--accent-green); color: #fff; border-color: var(--accent-green); }
+  .day-cell .day-label { font-size: 10px; color: var(--text-muted); display: block; }
+  .day-cell.selected .day-label { color: rgba(255,255,255,0.7); }
+
+  /* ===== ALL DONE CELEBRATION ===== */
+  .all-done-banner {
+    background: linear-gradient(135deg, var(--accent-green-light), #d4edda);
+    border: 2px solid var(--accent-green);
+    border-radius: var(--radius); padding: 20px;
+    text-align: center; margin-bottom: 6px;
+  }
+  .all-done-banner .adb-icon { font-size: 32px; }
+  .all-done-banner .adb-text {
+    font-weight: 700; font-size: 16px; color: var(--accent-green); margin-top: 4px;
+  }
+  .all-done-banner .adb-sub {
+    font-size: 13px; color: var(--text-muted); margin-top: 2px;
+  }
+
+  /* ===== RESPONSIVE ===== */
   @media (max-width: 420px) {
     .pantry-grid { grid-template-columns: 1fr; }
-    .hero h1 { font-size: 26px; }
-    .tab-btn { font-size: 10px; padding: 12px 4px 10px; }
+    .header-date { font-size: 20px; }
+    .nav-btn { font-size: 9px; }
+    .progress-chip { padding: 6px 8px; font-size: 11px; }
   }
 </style>
 </head>
@@ -346,7 +531,7 @@
 
 <!-- ===== PIN SCREEN ===== -->
 <div class="pin-screen" id="pin-screen">
-  <h1>🔒 Health Plan</h1>
+  <h1>Health Plan</h1>
   <p>Enter your PIN to sync across devices.<br>First visit? Pick any 4-digit PIN and remember it.</p>
   <input type="tel" class="pin-input" id="pin-input" maxlength="4" placeholder="PIN" autofocus>
   <button class="pin-btn" onclick="submitPin()">Open Dashboard</button>
@@ -359,21 +544,30 @@
 <!-- ===== APP ===== -->
 <div id="app" style="display:none;">
 
-<div class="hero">
-  <h1>Steve's Health Plan</h1>
-  <p>Meals & Supps · Workouts · Pantry · Tracker</p>
+<!-- ===== HEADER ===== -->
+<div class="top-header">
+  <div class="header-content">
+    <div class="header-greeting" id="header-greeting">Good morning, Steve</div>
+    <div class="header-date" id="header-date"></div>
+    <div class="header-streak" id="header-streak"></div>
+    <div class="progress-row" id="progress-row"></div>
+  </div>
 </div>
 
-<div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('meals')"><span class="tab-icon">🥗</span>Meals & Supps</button>
-  <button class="tab-btn" onclick="switchTab('workouts')"><span class="tab-icon">💪</span>Workouts</button>
-  <button class="tab-btn" onclick="switchTab('pantry')"><span class="tab-icon">🏪</span>Pantry</button>
-  <button class="tab-btn" onclick="switchTab('tracker')"><span class="tab-icon">📊</span>Tracker</button>
+<!-- ===== BOTTOM NAV ===== -->
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('today')"><span class="nav-icon">&#9737;</span>My Day</button>
+  <button class="nav-btn" onclick="switchTab('plan')"><span class="nav-icon">&#9776;</span>Full Plan</button>
+  <button class="nav-btn" onclick="switchTab('pantry')"><span class="nav-icon">&#127819;</span>Pantry</button>
+  <button class="nav-btn" onclick="switchTab('stats')"><span class="nav-icon">&#128200;</span>Stats</button>
 </div>
 
-<!-- ==================== MEALS & SUPPS ==================== -->
-<div class="tab-panel active" id="panel-meals">
-  <div class="section-head">Weekday Framework</div>
+<!-- ==================== MY DAY (TIMELINE) ==================== -->
+<div class="panel active" id="panel-today"></div>
+
+<!-- ==================== FULL PLAN ==================== -->
+<div class="panel" id="panel-plan">
+  <div class="plan-section-head">Weekday Meals</div>
 
   <div class="card">
     <div class="card-label">Morning</div>
@@ -389,6 +583,15 @@
     <div class="meal-option">
       <div class="opt-title">Greek Yogurt & Fruit</div>
       <div class="opt-desc">Greek yogurt + berries + drizzle of honey + Aussie Bites on the side</div>
+    </div>
+    <div class="supp-block" style="border-bottom:none; padding-bottom:0;">
+      <div class="supp-time">TAKE W/ MEAL</div>
+      <div class="supp-items">
+        <span class="supp-pill">CholestOff Plus</span>
+        <span class="supp-pill">Citrus Bergamot</span>
+        <span class="supp-pill">Fish Oil</span>
+        <span class="supp-pill">Metamucil x1</span>
+      </div>
     </div>
   </div>
 
@@ -417,12 +620,18 @@
       <div class="opt-desc">Simple protein bar — great grab-and-go</div>
     </div>
     <div class="meal-option">
-      <div class="opt-title">Aussie Bites × 2</div>
+      <div class="opt-title">Aussie Bites x 2</div>
       <div class="opt-desc">Oat-based, decent fiber, satisfying</div>
     </div>
     <div class="meal-option">
       <div class="opt-title">PBfit + Apple</div>
       <div class="opt-desc">Sliced apple dipped in PBfit mixed with water</div>
+    </div>
+    <div class="supp-block" style="border-bottom:none; padding-bottom:0;">
+      <div class="supp-time">POST WORKOUT</div>
+      <div class="supp-items">
+        <span class="supp-pill">Whey Protein</span>
+      </div>
     </div>
   </div>
 
@@ -441,56 +650,47 @@
       <div class="opt-title">Bean & Grain Bowl</div>
       <div class="opt-desc">Black beans + quinoa + roasted peppers + avocado + salsa</div>
     </div>
+    <div class="supp-block" style="border-bottom:none; padding-bottom:0;">
+      <div class="supp-time">TAKE W/ MEAL</div>
+      <div class="supp-items">
+        <span class="supp-pill">Metamucil x1</span>
+      </div>
+    </div>
   </div>
 
-  <div class="section-head">Sunday Prep (~45 min)</div>
+  <div class="plan-section-head">Workout Schedule</div>
+  <div class="card" style="padding:12px 8px;">
+    <div class="day-row" id="day-row"></div>
+  </div>
+  <div id="workout-detail"></div>
+  <div class="card" style="margin-top:12px; background:var(--accent-green-light); border-color:#c2d8c9;">
+    <div style="font-size:13px; color:var(--accent-green);">
+      <strong>Dr. Yazdanshenas's rule:</strong> Cardio must elevate your heart rate meaningfully — walking doesn't count. Each session ends with a 12-min cardio finisher.
+    </div>
+  </div>
+
+  <div class="plan-section-head">Sunday Prep (~45 min)</div>
   <div class="card">
-    <div class="meal-option"><div class="opt-title">Hard-boil 8–10 eggs</div></div>
+    <div class="meal-option"><div class="opt-title">Hard-boil 8-10 eggs</div></div>
     <div class="meal-option"><div class="opt-title">Portion out cottage cheese into containers</div></div>
     <div class="meal-option"><div class="opt-title">Wash & chop veggies (cucumbers, bell peppers, broccoli)</div></div>
     <div class="meal-option"><div class="opt-title">Pre-portion guac cups & hummus into grab bags</div></div>
     <div class="meal-option"><div class="opt-title">Cook a batch of quinoa or brown rice</div></div>
   </div>
 
-  <div class="section-head">Weekend Splurge Rules</div>
+  <div class="plan-section-head">Weekend Splurge Rules</div>
   <div class="card">
-    <div class="meal-option"><div class="opt-desc">✅ Heavy cream in coffee, whole milk, richer meals — all fair game Sat & Sun</div></div>
-    <div class="meal-option"><div class="opt-desc">✅ Eat out, enjoy favorites — no guilt, no tracking</div></div>
-    <div class="meal-option"><div class="opt-desc">⚡ Keep supplements consistent even on weekends</div></div>
+    <div class="meal-option"><div class="opt-desc">Heavy cream in coffee, whole milk, richer meals — all fair game Sat & Sun</div></div>
+    <div class="meal-option"><div class="opt-desc">Eat out, enjoy favorites — no guilt, no tracking</div></div>
+    <div class="meal-option"><div class="opt-desc">Keep supplements consistent even on weekends</div></div>
   </div>
 
-  <div class="section-head">💊 Daily Supplement Protocol</div>
-
-  <div class="card">
-    <div class="supp-block">
-      <div class="supp-time">MORNING<br>w/ breakfast</div>
-      <div class="supp-items">
-        <span class="supp-pill">CholestOff Plus</span>
-        <span class="supp-pill">Citrus Bergamot</span>
-        <span class="supp-pill">Fish Oil</span>
-        <span class="supp-pill">Metamucil ×1</span>
-      </div>
-    </div>
-    <div class="supp-block">
-      <div class="supp-time">EVENING<br>w/ dinner</div>
-      <div class="supp-items">
-        <span class="supp-pill">Metamucil ×1</span>
-      </div>
-    </div>
-    <div class="supp-block">
-      <div class="supp-time">POST<br>WORKOUT</div>
-      <div class="supp-items">
-        <span class="supp-pill">Whey Protein</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="card" style="background:var(--accent-orange-light); border-color:#e4ccaa;">
+  <div class="plan-section-head">Supplement Reference</div>
+  <div class="card" style="background:var(--accent-orange-light); border-color:#e4ccaa; margin-bottom: 12px;">
     <div style="font-size:13px; color:var(--accent-orange);">
-      <strong>📌 After a break:</strong> Ease Metamucil back in — one serving/day for a few days before going back to twice daily. Other supplements can resume at full dose immediately.
+      <strong>After a break:</strong> Ease Metamucil back in — one serving/day for a few days before going back to twice daily. Other supplements can resume at full dose immediately.
     </div>
   </div>
-
   <div class="card">
     <div class="card-label">What They Do</div>
     <div class="meal-option">
@@ -512,23 +712,9 @@
   </div>
 </div>
 
-<!-- ==================== WORKOUTS ==================== -->
-<div class="tab-panel" id="panel-workouts">
-  <div class="card" style="padding:12px 8px;">
-    <div class="day-row" id="day-row"></div>
-  </div>
-  <div id="workout-detail"></div>
-
-  <div class="card" style="margin-top:16px; background:var(--accent-green-light); border-color:#c2d8c9;">
-    <div style="font-size:13px; color:var(--accent-green);">
-      <strong>🫀 Dr. Yazdanshenas's rule:</strong> Cardio must elevate your heart rate meaningfully — walking doesn't count. This PPL split hits weights 6×/week with a 12-min cardio finisher every session.
-    </div>
-  </div>
-</div>
-
 <!-- ==================== PANTRY ==================== -->
-<div class="tab-panel" id="panel-pantry">
-  <div class="section-head">Use Freely</div>
+<div class="panel" id="panel-pantry">
+  <div class="plan-section-head" style="margin-top:4px;">Use Freely</div>
   <div class="pantry-grid">
     <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Low-fat Cottage Cheese</div><div class="pi-note">Breakfast bowls, snacks</div></div>
     <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Hard-Boiled Eggs</div><div class="pi-note">Protein on salads & snacks</div></div>
@@ -540,7 +726,7 @@
     <div class="pantry-item"><span class="pantry-cat cat-free">Free</span><div class="pi-name">Vita Coco Coconut Milk</div><div class="pi-note">Shake base — LDL-friendly</div></div>
   </div>
 
-  <div class="section-head">In Moderation</div>
+  <div class="plan-section-head">In Moderation</div>
   <div class="pantry-grid">
     <div class="pantry-item"><span class="pantry-cat cat-mod">Moderate</span><div class="pi-name">Guacamole Cups</div><div class="pi-note">1/day — good fats but calorie-dense</div></div>
     <div class="pantry-item"><span class="pantry-cat cat-mod">Moderate</span><div class="pi-name">Rise Bars</div><div class="pi-note">1/day max as a snack</div></div>
@@ -550,15 +736,15 @@
     <div class="pantry-item"><span class="pantry-cat cat-mod">Moderate</span><div class="pi-name">Probiotic Sodas</div><div class="pi-note">1/day — watch sugar content</div></div>
   </div>
 
-  <div class="section-head">Weekends Only</div>
+  <div class="plan-section-head">Weekends Only</div>
   <div class="pantry-grid">
     <div class="pantry-item"><span class="pantry-cat cat-weekend">Weekend</span><div class="pi-name">Heavy Whipping Cream</div><div class="pi-note">Biggest LDL offender for weekdays</div></div>
     <div class="pantry-item"><span class="pantry-cat cat-weekend">Weekend</span><div class="pi-name">Whole Milk</div><div class="pi-note">Swap to coconut/oat/almond on weekdays</div></div>
   </div>
 </div>
 
-<!-- ==================== TRACKER ==================== -->
-<div class="tab-panel" id="panel-tracker">
+<!-- ==================== STATS ==================== -->
+<div class="panel" id="panel-stats">
   <div id="tracker-content">Loading tracker...</div>
 </div>
 
@@ -566,7 +752,6 @@
 
 <script>
 // ==================== FIREBASE CONFIG ====================
-// 🔧 REPLACE THIS with your Firebase project config
 const firebaseConfig = {
   apiKey: "AIzaSyC6yZhFjVVbyGBjyA85vx2wkpRRckCpR9U",
   authDomain: "steves-health-plan.firebaseapp.com",
@@ -602,31 +787,27 @@ function initApp() {
   document.getElementById('pin-screen').classList.add('hidden');
   document.getElementById('app').style.display = 'block';
 
-  // Hash the PIN to create a db path (simple hash, not security-critical)
   const pinHash = 'user_' + simpleHash(userPin);
   dbRef = db.ref('tracker/' + pinHash);
 
-  // Listen for real-time updates (syncs across devices)
   dbRef.on('value', (snapshot) => {
     const data = snapshot.val();
     trackerData = data || {};
     storageReady = true;
     setSyncStatus('connected');
-
-    // Re-render tracker if it's currently visible
-    const trackerPanel = document.getElementById('panel-tracker');
-    if (trackerPanel.classList.contains('active')) {
-      renderTracker();
-    }
+    renderToday();
+    updateHeader();
+    const statsPanel = document.getElementById('panel-stats');
+    if (statsPanel.classList.contains('active')) renderTracker();
   });
 
-  // Connection state
   db.ref('.info/connected').on('value', (snap) => {
     setSyncStatus(snap.val() ? 'connected' : 'offline');
   });
 
-  // Init workout selector
   initWorkouts();
+  updateHeader();
+  renderToday();
 }
 
 function simpleHash(str) {
@@ -634,7 +815,7 @@ function simpleHash(str) {
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   return Math.abs(hash).toString(36);
 }
@@ -647,7 +828,6 @@ function setSyncStatus(status) {
   dot.title = status === 'connected' ? 'Synced' : status === 'syncing' ? 'Syncing...' : 'Offline';
 }
 
-// Auto-open if PIN exists
 if (userPin) {
   initApp();
 } else {
@@ -656,111 +836,397 @@ if (userPin) {
 
 // ==================== TAB SWITCHING ====================
 function switchTab(id) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + id).classList.add('active');
-  const tabs = ['meals','workouts','pantry','tracker'];
+  const tabs = ['today','plan','pantry','stats'];
   const idx = tabs.indexOf(id);
-  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
-  if (id === 'tracker') renderTracker();
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if (id === 'stats') renderTracker();
+  if (id === 'today') renderToday();
+}
+
+// ==================== HEADER ====================
+function updateHeader() {
+  const now = new Date();
+  const hour = now.getHours();
+  let greeting = 'Good evening';
+  if (hour < 12) greeting = 'Good morning';
+  else if (hour < 17) greeting = 'Good afternoon';
+
+  document.getElementById('header-greeting').textContent = greeting + ', Steve';
+
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('header-date').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+
+  const streak = getStreak();
+  const icon = streak >= 7 ? '\uD83D\uDD25' : streak >= 3 ? '\u26A1' : '\uD83C\uDFAF';
+  document.getElementById('header-streak').innerHTML = `${icon} ${streak} day streak`;
+
+  // Progress chips
+  const dk = dateKey(now);
+  const chipHtml = CATEGORIES.map(c => {
+    const done = getCheckState(dk, c.key);
+    return `<div class="progress-chip ${done ? 'done' : ''}">
+      <span class="chip-dot"></span>${c.icon} ${c.label}
+    </div>`;
+  }).join('');
+  document.getElementById('progress-row').innerHTML = chipHtml;
+}
+
+// ==================== TODAY TIMELINE ====================
+function getTimeOfDay() {
+  const h = new Date().getHours();
+  if (h < 10) return 'morning';
+  if (h < 12) return 'workout';
+  if (h < 14) return 'midday';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
+
+function renderToday() {
+  const panel = document.getElementById('panel-today');
+  const now = new Date();
+  const dk = dateKey(now);
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const currentPhase = getTimeOfDay();
+  const todayWorkout = getTodayWorkout(dayOfWeek);
+
+  const allDone = getDayScore(dk) === CATEGORIES.length;
+
+  let html = '';
+
+  // All-done celebration
+  if (allDone) {
+    html += `<div class="all-done-banner all-done">
+      <div class="adb-icon">\u2728</div>
+      <div class="adb-text">All goals hit today!</div>
+      <div class="adb-sub">Nice work, Steve. Keep the streak alive.</div>
+    </div>`;
+  }
+
+  // Weekend banner
+  if (isWeekend) {
+    html += `<div class="weekend-banner">
+      <div class="wb-title">\uD83C\uDF1F Weekend Mode</div>
+      <div class="wb-desc">Eat freely, enjoy yourself. Just keep supplements consistent.</div>
+    </div>`;
+  }
+
+  // === MORNING BLOCK ===
+  const mealsChecked = getCheckState(dk, 'meals');
+  const suppsChecked = getCheckState(dk, 'supplements');
+  const isCurrentMorning = currentPhase === 'morning';
+  const morningExpanded = isCurrentMorning || !mealsChecked;
+
+  html += buildTimelineBlock({
+    id: 'morning',
+    iconClass: 'morning',
+    icon: '\uD83C\uDF05',
+    label: '6 - 9 AM',
+    title: 'Breakfast + Supps',
+    isCurrent: isCurrentMorning,
+    expanded: morningExpanded,
+    body: `
+      <div class="check-strip ${mealsChecked ? 'checked' : ''}" onclick="toggleCheckToday('meals')">
+        <div class="cs-toggle">\u2713</div>
+        <div class="cs-label">\uD83E\uDD57 Meals on plan</div>
+        <div class="cs-status">${mealsChecked ? 'Done' : 'Tap to check in'}</div>
+      </div>
+      <div class="check-strip ${suppsChecked ? 'checked' : ''}" onclick="toggleCheckToday('supplements')">
+        <div class="cs-toggle">\u2713</div>
+        <div class="cs-label">\uD83D\uDC8A Supplements taken</div>
+        <div class="cs-status">${suppsChecked ? 'Done' : 'Tap to check in'}</div>
+      </div>
+      ${!isWeekend ? `<div class="meal-options">
+        <div class="meal-opt"><div class="mo-title">Cottage Cheese Bowl</div><div class="mo-desc">Low-fat cottage cheese + Nutrail granola + cucumber slices</div></div>
+        <div class="meal-opt"><div class="mo-title">Protein Shake</div><div class="mo-desc">Whey protein + PBfit + Vita Coco coconut milk + banana</div></div>
+        <div class="meal-opt"><div class="mo-title">Greek Yogurt & Fruit</div><div class="mo-desc">Greek yogurt + berries + honey + Aussie Bites on the side</div></div>
+      </div>
+      <div class="supp-row">
+        <div class="sr-label">\uD83D\uDC8A Morning Supplements (take with breakfast)</div>
+        <span class="supp-pill">CholestOff Plus</span>
+        <span class="supp-pill">Citrus Bergamot</span>
+        <span class="supp-pill">Fish Oil</span>
+        <span class="supp-pill">Metamucil x1</span>
+      </div>` : ''}
+    `
+  });
+
+  // === WORKOUT BLOCK ===
+  const workoutChecked = getCheckState(dk, 'workout');
+  const isCurrentWorkout = currentPhase === 'workout';
+  const workoutExpanded = isCurrentWorkout || !workoutChecked;
+
+  let workoutBody = `
+    <div class="check-strip ${workoutChecked ? 'checked' : ''}" onclick="toggleCheckToday('workout')">
+      <div class="cs-toggle">\u2713</div>
+      <div class="cs-label">\uD83D\uDCAA Workout complete</div>
+      <div class="cs-status">${workoutChecked ? 'Done' : 'Tap to check in'}</div>
+    </div>`;
+
+  if (todayWorkout) {
+    workoutBody += `<div style="margin-bottom:8px;">
+      ${todayWorkout.badge}
+      <span style="font-size:12px;color:var(--text-muted);margin-left:6px;">${todayWorkout.duration}</span>
+    </div>
+    <div class="exercise-list">`;
+    todayWorkout.exercises.forEach(e => {
+      if (e[0].includes('CARDIO FINISHER')) {
+        workoutBody += `<div class="exercise-row cardio-divider"><div class="exercise-name">Cardio Finisher</div><div class="exercise-detail"></div></div>`;
+      } else {
+        workoutBody += `<div class="exercise-row"><div class="exercise-name">${e[0]}</div><div class="exercise-detail">${e[1]}</div></div>`;
+      }
+    });
+    workoutBody += '</div>';
+  } else {
+    workoutBody += `<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:14px;">Rest day — recover and recharge</div>`;
+  }
+
+  html += buildTimelineBlock({
+    id: 'workout',
+    iconClass: 'workout',
+    icon: '\uD83C\uDFCB\uFE0F',
+    label: dayOfWeek === 0 ? 'Rest Day' : '9 - 11 AM',
+    title: todayWorkout ? todayWorkout.title.split(' \u2014 ')[1] || todayWorkout.title : 'Rest & Recover',
+    isCurrent: isCurrentWorkout,
+    expanded: workoutExpanded,
+    body: workoutBody
+  });
+
+  // === LUNCH BLOCK ===
+  const isCurrentMidday = currentPhase === 'midday';
+  html += buildTimelineBlock({
+    id: 'midday',
+    iconClass: 'midday',
+    icon: '\uD83E\uDD57',
+    label: '12 - 1 PM',
+    title: 'Lunch',
+    isCurrent: isCurrentMidday,
+    expanded: isCurrentMidday,
+    body: !isWeekend ? `
+      <div class="meal-options">
+        <div class="meal-opt"><div class="mo-title">Salad Kit + Protein</div><div class="mo-desc">Taylor Farms kit + 2 hard-boiled eggs + guac cup on top</div></div>
+        <div class="meal-opt"><div class="mo-title">Hummus Plate</div><div class="mo-desc">Hummus + veggies + hard-boiled egg + whole grain crackers</div></div>
+        <div class="meal-opt"><div class="mo-title">Wrap</div><div class="mo-desc">Whole wheat tortilla + turkey or tuna + greens + hummus spread</div></div>
+      </div>
+    ` : `<div style="text-align:center;padding:8px;color:var(--text-muted);font-size:13px;">Weekend — eat what you enjoy!</div>`
+  });
+
+  // === SNACK BLOCK ===
+  const isCurrentAfternoon = currentPhase === 'afternoon';
+  html += buildTimelineBlock({
+    id: 'afternoon',
+    iconClass: 'afternoon',
+    icon: '\uD83C\uDF4E',
+    label: '2 - 4 PM',
+    title: 'Snack + Post-Workout',
+    isCurrent: isCurrentAfternoon,
+    expanded: isCurrentAfternoon,
+    body: !isWeekend ? `
+      <div class="meal-options">
+        <div class="meal-opt"><div class="mo-title">Rise Bar</div><div class="mo-desc">Simple protein bar — great grab-and-go</div></div>
+        <div class="meal-opt"><div class="mo-title">Aussie Bites x 2</div><div class="mo-desc">Oat-based, decent fiber, satisfying</div></div>
+        <div class="meal-opt"><div class="mo-title">PBfit + Apple</div><div class="mo-desc">Sliced apple dipped in PBfit mixed with water</div></div>
+      </div>
+      <div class="supp-row">
+        <div class="sr-label">\uD83D\uDC8A Post-Workout</div>
+        <span class="supp-pill">Whey Protein</span>
+      </div>
+    ` : `<div style="text-align:center;padding:8px;color:var(--text-muted);font-size:13px;">Weekend — snack freely</div>`
+  });
+
+  // === DINNER BLOCK ===
+  const isCurrentEvening = currentPhase === 'evening';
+  html += buildTimelineBlock({
+    id: 'evening',
+    iconClass: 'evening',
+    icon: '\uD83C\uDF19',
+    label: '6 - 8 PM',
+    title: 'Dinner + Evening Supps',
+    isCurrent: isCurrentEvening,
+    expanded: isCurrentEvening,
+    body: `
+      ${!isWeekend ? `<div class="meal-options">
+        <div class="meal-opt"><div class="mo-title">Salmon + Roasted Veggies</div><div class="mo-desc">Baked salmon fillet + broccoli, sweet potato, olive oil</div></div>
+        <div class="meal-opt"><div class="mo-title">Chicken Stir-Fry</div><div class="mo-desc">Chicken breast + mixed veggies + brown rice + low-sodium soy sauce</div></div>
+        <div class="meal-opt"><div class="mo-title">Bean & Grain Bowl</div><div class="mo-desc">Black beans + quinoa + roasted peppers + avocado + salsa</div></div>
+      </div>` : `<div style="text-align:center;padding:8px;color:var(--text-muted);font-size:13px;">Weekend — enjoy dinner out or cook something fun</div>`}
+      <div class="supp-row">
+        <div class="sr-label">\uD83D\uDC8A Evening Supplement (take with dinner)</div>
+        <span class="supp-pill">Metamucil x1</span>
+      </div>
+    `
+  });
+
+  // Sunday prep reminder
+  if (dayOfWeek === 0) {
+    html += `<div class="time-card" style="border-color:var(--accent-orange);margin-top:6px;">
+      <div style="padding:18px;">
+        <div style="font-weight:700;font-size:15px;color:var(--accent-orange);margin-bottom:8px;">Meal Prep Reminder (~45 min)</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+          Hard-boil 8-10 eggs<br>
+          Portion cottage cheese into containers<br>
+          Wash & chop veggies<br>
+          Pre-portion guac cups & hummus<br>
+          Cook quinoa or brown rice
+        </div>
+      </div>
+    </div>`;
+  }
+
+  panel.innerHTML = html;
+
+  // Auto-scroll to current section
+  setTimeout(() => {
+    const currentEl = panel.querySelector('.now-active');
+    if (currentEl) {
+      currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 100);
+}
+
+function buildTimelineBlock({id, iconClass, icon, label, title, isCurrent, expanded, body}) {
+  return `<div class="timeline-block">
+    <div class="time-card ${isCurrent ? 'now-active' : ''} ${expanded ? 'expanded' : ''}" id="tc-${id}">
+      <div class="time-header" onclick="toggleTimeCard('${id}')">
+        <div class="time-icon ${iconClass}">${icon}</div>
+        <div class="time-meta">
+          <div class="time-label">${label}${isCurrent ? '<span class="time-now-badge">Now</span>' : ''}</div>
+          <div class="time-title">${title}</div>
+        </div>
+        <div class="time-chevron">\u25BE</div>
+      </div>
+      <div class="time-body">
+        <div class="time-body-inner">${body}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleTimeCard(id) {
+  const card = document.getElementById('tc-' + id);
+  card.classList.toggle('expanded');
+}
+
+async function toggleCheckToday(catKey) {
+  const dk = dateKey(new Date());
+  if (!trackerData[dk]) trackerData[dk] = {};
+  trackerData[dk][catKey] = !trackerData[dk][catKey];
+  if (!trackerData[dk][catKey]) delete trackerData[dk][catKey];
+  if (Object.keys(trackerData[dk]).length === 0) delete trackerData[dk];
+  await saveTrackerData();
+  renderToday();
+  updateHeader();
+}
+
+function getTodayWorkout(dayOfWeek) {
+  // dayOfWeek: 0=Sun, 1=Mon...6=Sat
+  // workouts array: 0=Mon, 1=Tue...6=Sun
+  const idx = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const w = workouts[idx];
+  if (idx === 6) return null; // Sunday = rest
+  return w;
 }
 
 // ==================== WORKOUTS ====================
 const workouts = [
   {
-    title: "Monday — Push A",
-    badge: '<span class="workout-badge badge-strength">Push</span>',
-    duration: "55–65 min",
+    title: "Monday \u2014 Push A",
+    badge: '<span class="workout-type-badge badge-strength">Push</span>',
+    duration: "55-65 min",
     exercises: [
-      ["Barbell or Dumbbell Bench Press", "4 × 8–10 reps"],
-      ["Incline Dumbbell Press", "3 × 10–12 reps"],
-      ["Overhead Press (standing)", "3 × 8–10 reps"],
-      ["Cable Lateral Raises", "3 × 15 reps"],
-      ["Tricep Dips or Pushdowns", "3 × 12 reps"],
-      ["─── CARDIO FINISHER ───", ""],
-      ["Bike or Elliptical — intervals", "12 min (30s hard / 60s easy)"],
+      ["Barbell or Dumbbell Bench Press", "4 x 8-10"],
+      ["Incline Dumbbell Press", "3 x 10-12"],
+      ["Overhead Press (standing)", "3 x 8-10"],
+      ["Cable Lateral Raises", "3 x 15"],
+      ["Tricep Dips or Pushdowns", "3 x 12"],
+      ["\u2500\u2500\u2500 CARDIO FINISHER \u2500\u2500\u2500", ""],
+      ["Bike or Elliptical \u2014 intervals", "12 min (30s hard / 60s easy)"],
     ]
   },
   {
-    title: "Tuesday — Pull A",
-    badge: '<span class="workout-badge badge-cardio">Pull</span>',
-    duration: "55–65 min",
+    title: "Tuesday \u2014 Pull A",
+    badge: '<span class="workout-type-badge badge-cardio">Pull</span>',
+    duration: "55-65 min",
     exercises: [
-      ["Lat Pulldowns (wide grip)", "4 × 8–10 reps"],
-      ["Seated Cable Row", "3 × 10–12 reps"],
-      ["Dumbbell Shrugs", "3 × 12 reps"],
-      ["Face Pulls", "3 × 15 reps"],
-      ["Barbell or Dumbbell Curls", "3 × 10–12 reps"],
-      ["Hammer Curls", "2 × 12 reps"],
-      ["─── CARDIO FINISHER ───", ""],
-      ["Rowing machine — steady", "12 min at moderate pace"],
+      ["Lat Pulldowns (wide grip)", "4 x 8-10"],
+      ["Seated Cable Row", "3 x 10-12"],
+      ["Dumbbell Shrugs", "3 x 12"],
+      ["Face Pulls", "3 x 15"],
+      ["Barbell or Dumbbell Curls", "3 x 10-12"],
+      ["Hammer Curls", "2 x 12"],
+      ["\u2500\u2500\u2500 CARDIO FINISHER \u2500\u2500\u2500", ""],
+      ["Rowing machine \u2014 steady", "12 min moderate pace"],
     ]
   },
   {
-    title: "Wednesday — Legs A",
-    badge: '<span class="workout-badge badge-circuit">Legs</span>',
-    duration: "55–65 min",
+    title: "Wednesday \u2014 Legs A",
+    badge: '<span class="workout-type-badge badge-circuit">Legs</span>',
+    duration: "55-65 min",
     exercises: [
-      ["Barbell Squat or Leg Press", "4 × 8–10 reps"],
-      ["Romanian Deadlifts", "3 × 10 reps"],
-      ["Walking Lunges", "3 × 12 each leg"],
-      ["Leg Curls", "3 × 12 reps"],
-      ["Calf Raises", "3 × 15 reps"],
-      ["─── CARDIO FINISHER ───", ""],
-      ["Incline treadmill walk (10%+)", "12 min at brisk pace"],
+      ["Barbell Squat or Leg Press", "4 x 8-10"],
+      ["Romanian Deadlifts", "3 x 10"],
+      ["Walking Lunges", "3 x 12 each"],
+      ["Leg Curls", "3 x 12"],
+      ["Calf Raises", "3 x 15"],
+      ["\u2500\u2500\u2500 CARDIO FINISHER \u2500\u2500\u2500", ""],
+      ["Incline treadmill walk (10%+)", "12 min brisk"],
     ]
   },
   {
-    title: "Thursday — Push B",
-    badge: '<span class="workout-badge badge-strength">Push</span>',
-    duration: "55–65 min",
+    title: "Thursday \u2014 Push B",
+    badge: '<span class="workout-type-badge badge-strength">Push</span>',
+    duration: "55-65 min",
     exercises: [
-      ["Dumbbell Floor Press or Machine Chest", "4 × 10–12 reps"],
-      ["Cable Flyes (low to high)", "3 × 12–15 reps"],
-      ["Arnold Press (seated)", "3 × 10 reps"],
-      ["Lateral Raises (dumbbell)", "3 × 15 reps"],
-      ["Overhead Tricep Extension", "3 × 12 reps"],
-      ["─── CARDIO FINISHER ───", ""],
-      ["Bike — steady moderate", "12 min, HR 130–150"],
+      ["Dumbbell Floor Press or Machine", "4 x 10-12"],
+      ["Cable Flyes (low to high)", "3 x 12-15"],
+      ["Arnold Press (seated)", "3 x 10"],
+      ["Lateral Raises (dumbbell)", "3 x 15"],
+      ["Overhead Tricep Extension", "3 x 12"],
+      ["\u2500\u2500\u2500 CARDIO FINISHER \u2500\u2500\u2500", ""],
+      ["Bike \u2014 steady moderate", "12 min, HR 130-150"],
     ]
   },
   {
-    title: "Friday — Pull B",
-    badge: '<span class="workout-badge badge-cardio">Pull</span>',
-    duration: "55–65 min",
+    title: "Friday \u2014 Pull B",
+    badge: '<span class="workout-type-badge badge-cardio">Pull</span>',
+    duration: "55-65 min",
     exercises: [
-      ["Pull-ups or Assisted Pull-ups", "4 × 6–10 reps"],
-      ["Single-Arm Dumbbell Row", "3 × 10 each"],
-      ["Reverse Flyes", "3 × 15 reps"],
-      ["Cable Pullover", "3 × 12 reps"],
-      ["Incline Dumbbell Curls", "3 × 10–12 reps"],
-      ["─── CARDIO FINISHER ───", ""],
-      ["Elliptical — intervals", "12 min (30s hard / 60s easy)"],
+      ["Pull-ups or Assisted Pull-ups", "4 x 6-10"],
+      ["Single-Arm Dumbbell Row", "3 x 10 each"],
+      ["Reverse Flyes", "3 x 15"],
+      ["Cable Pullover", "3 x 12"],
+      ["Incline Dumbbell Curls", "3 x 10-12"],
+      ["\u2500\u2500\u2500 CARDIO FINISHER \u2500\u2500\u2500", ""],
+      ["Elliptical \u2014 intervals", "12 min (30s hard / 60s easy)"],
     ]
   },
   {
-    title: "Saturday — Legs B",
-    badge: '<span class="workout-badge badge-circuit">Legs</span>',
-    duration: "55–65 min",
+    title: "Saturday \u2014 Legs B",
+    badge: '<span class="workout-type-badge badge-circuit">Legs</span>',
+    duration: "55-65 min",
     exercises: [
-      ["Goblet Squats", "3 × 12 reps"],
-      ["Hip Thrusts or Glute Bridge", "3 × 12 reps"],
-      ["Bulgarian Split Squats", "3 × 10 each leg"],
-      ["Leg Extensions", "3 × 12 reps"],
-      ["Seated Calf Raises", "3 × 15 reps"],
-      ["Plank + Side Plank", "3 × 30–45 sec each"],
-      ["─── CARDIO FINISHER ───", ""],
-      ["Rowing machine — intervals", "12 min (30s hard / 60s easy)"],
+      ["Goblet Squats", "3 x 12"],
+      ["Hip Thrusts or Glute Bridge", "3 x 12"],
+      ["Bulgarian Split Squats", "3 x 10 each"],
+      ["Leg Extensions", "3 x 12"],
+      ["Seated Calf Raises", "3 x 15"],
+      ["Plank + Side Plank", "3 x 30-45 sec"],
+      ["\u2500\u2500\u2500 CARDIO FINISHER \u2500\u2500\u2500", ""],
+      ["Rowing machine \u2014 intervals", "12 min (30s hard / 60s easy)"],
     ]
   },
   {
-    title: "Sunday — Rest & Prep",
-    badge: '<span class="workout-badge badge-rest">Rest</span>',
-    duration: "—",
+    title: "Sunday \u2014 Rest & Prep",
+    badge: '<span class="workout-type-badge badge-rest">Rest</span>',
+    duration: "\u2014",
     exercises: [
-      ["Full rest day — recover and recharge", ""],
+      ["Full rest day \u2014 recover and recharge", ""],
       ["Meal prep for the week (~45 min)", ""],
-      ["Optional: foam rolling or light stretching", "10–15 min"],
+      ["Optional: foam rolling or light stretching", "10-15 min"],
     ]
   }
 ];
@@ -769,15 +1235,18 @@ const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 function initWorkouts() {
   const dayRow = document.getElementById('day-row');
+  if (!dayRow) return;
   dayRow.innerHTML = '';
+  const todayIdx = new Date().getDay();
+  const defaultIdx = todayIdx === 0 ? 6 : todayIdx - 1;
   dayLabels.forEach((d, i) => {
     const el = document.createElement('div');
-    el.className = 'day-cell' + (i === 0 ? ' selected' : '');
+    el.className = 'day-cell' + (i === defaultIdx ? ' selected' : '');
     el.innerHTML = `<span class="day-label">${d}</span>`;
     el.onclick = () => selectDay(i);
     dayRow.appendChild(el);
   });
-  selectDay(0);
+  selectDay(defaultIdx);
 }
 
 function selectDay(index) {
@@ -799,9 +1268,9 @@ function selectDay(index) {
 
 // ==================== TRACKER ====================
 const CATEGORIES = [
-  { key: 'meals', label: 'Meals', icon: '🥗', plan: 'Follow weekday framework' },
-  { key: 'workout', label: 'Workout', icon: '💪', plan: 'PPL session + cardio finisher' },
-  { key: 'supplements', label: 'Supplements', icon: '💊', plan: 'Morning + evening protocol' },
+  { key: 'meals', label: 'Meals', icon: '\uD83E\uDD57', plan: 'Follow weekday framework' },
+  { key: 'workout', label: 'Workout', icon: '\uD83D\uDCAA', plan: 'PPL session + cardio finisher' },
+  { key: 'supplements', label: 'Supplements', icon: '\uD83D\uDC8A', plan: 'Morning + evening protocol' },
 ];
 
 function dateKey(d) {
@@ -837,11 +1306,11 @@ async function toggleCheck(catKey) {
   const dk = dateKey(trackerDate);
   if (!trackerData[dk]) trackerData[dk] = {};
   trackerData[dk][catKey] = !trackerData[dk][catKey];
-  // Clean up false values (Firebase doesn't store false well)
   if (!trackerData[dk][catKey]) delete trackerData[dk][catKey];
   if (Object.keys(trackerData[dk]).length === 0) delete trackerData[dk];
   await saveTrackerData();
   renderTracker();
+  updateHeader();
 }
 
 function getCheckState(dk, catKey) {
@@ -894,13 +1363,13 @@ function renderTracker() {
       <div class="streak-num">${streak}</div>
       <div class="streak-unit">day${streak !== 1 ? 's' : ''} in a row</div>
     </div>
-    <div class="streak-fire">${streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : '🎯'}</div>
+    <div class="streak-fire">${streak >= 7 ? '\uD83D\uDD25' : streak >= 3 ? '\u26A1' : '\uD83C\uDFAF'}</div>
   </div>`;
 
   html += `<div class="tracker-date-nav">
-    <button onclick="navDay(-1)">‹</button>
+    <button onclick="navDay(-1)">\u2039</button>
     <div class="tracker-date-label">${formatDate(trackerDate)}</div>
-    <button onclick="navDay(1)" ${isFuture ? 'disabled style="opacity:0.3"' : ''}>›</button>
+    <button onclick="navDay(1)" ${isFuture ? 'disabled style="opacity:0.3"' : ''}>\u203A</button>
   </div>`;
   if (isToday) html += `<div class="tracker-date-sub">Today</div>`;
 
@@ -908,7 +1377,7 @@ function renderTracker() {
     const checked = getCheckState(dk, c.key);
     html += `<div class="check-card ${checked ? 'checked' : ''}" onclick="toggleCheck('${c.key}')">
       <div class="check-inner">
-        <div class="check-toggle">${checked ? '✓' : ''}</div>
+        <div class="check-toggle">${checked ? '\u2713' : ''}</div>
         <div class="check-info">
           <div class="check-cat">${c.icon} ${c.label}</div>
           <div class="check-plan">${c.plan}</div>
@@ -919,7 +1388,7 @@ function renderTracker() {
 
   if (allDone) {
     html += `<div style="text-align:center;margin-top:16px;font-size:14px;color:var(--hit);font-weight:600;">
-      ✨ All goals hit today — nice work, Steve!
+      \u2728 All goals hit today \u2014 nice work, Steve!
     </div>`;
   }
 
@@ -929,12 +1398,12 @@ function renderTracker() {
   monday.setDate(monday.getDate() + (weekOffset * 7));
   const sunday = new Date(monday);
   sunday.setDate(sunday.getDate() + 6);
-  const weekLabel = `${monday.toLocaleDateString('en-US', {month:'short',day:'numeric'})} – ${sunday.toLocaleDateString('en-US', {month:'short',day:'numeric'})}`;
+  const weekLabel = `${monday.toLocaleDateString('en-US', {month:'short',day:'numeric'})} \u2013 ${sunday.toLocaleDateString('en-US', {month:'short',day:'numeric'})}`;
 
   html += `<div class="week-nav">
-    <button onclick="navWeek(-1)">‹ Prev</button>
+    <button onclick="navWeek(-1)">\u2039 Prev</button>
     <span>${weekLabel}</span>
-    <button onclick="navWeek(1)" ${weekOffset >= 0 ? 'disabled style="opacity:0.3"' : ''}>Next ›</button>
+    <button onclick="navWeek(1)" ${weekOffset >= 0 ? 'disabled style="opacity:0.3"' : ''}>Next \u203A</button>
   </div>`;
 
   CATEGORIES.forEach(c => {
@@ -955,9 +1424,9 @@ function renderTracker() {
         possible++;
         if (isChecked) {
           hits++;
-          cellsData += `<div class="heatmap-cell hm-hit">✓</div>`;
+          cellsData += `<div class="heatmap-cell hm-hit">\u2713</div>`;
         } else {
-          cellsData += `<div class="heatmap-cell hm-miss">✗</div>`;
+          cellsData += `<div class="heatmap-cell hm-miss">\u2717</div>`;
         }
       }
     }
@@ -1013,6 +1482,8 @@ async function resetData() {
     trackerData = {};
     await saveTrackerData();
     renderTracker();
+    updateHeader();
+    renderToday();
   }
 }
 
